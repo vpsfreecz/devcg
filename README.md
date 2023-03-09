@@ -85,5 +85,5 @@ Options:
   -debug
     	Print program instructions
   -name string
-    	Set BPF program name (default "devcgprog")
+    	Set BPF program name (default "auto")
 ```

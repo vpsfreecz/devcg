@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"flag"
 	"fmt"
 	"os"
@@ -29,6 +30,25 @@ type options struct {
 	newLinkPin string
 	mode       Mode
 	devices    DeviceList
+}
+
+func (opts *options) setProgName() {
+	if opts.progName == "auto" {
+		opts.progName = opts.genProgName()
+	}
+}
+
+func (opts *options) genProgName() string {
+	h := sha256.New()
+
+	h.Write([]byte(opts.progPin))
+	h.Write([]byte(opts.mode.String()))
+
+	for _, dev := range opts.devices {
+		h.Write([]byte(dev.String()))
+	}
+
+	return fmt.Sprintf("%x", h.Sum(nil))[0:10]
 }
 
 const helpMessage = `
@@ -100,7 +120,7 @@ func parseOptions() *options {
 	flag.StringVar(
 		&opts.progName,
 		"name",
-		"devcgprog",
+		"auto",
 		"Set BPF program name",
 	)
 
@@ -166,6 +186,8 @@ func parseSet(opts *options, args []string) error {
 		return err
 	}
 
+	opts.setProgName()
+
 	return nil
 }
 
@@ -184,6 +206,8 @@ func parseNew(opts *options, args []string) error {
 	if err := parseDevices(opts, args[2:]); err != nil {
 		return err
 	}
+
+	opts.setProgName()
 
 	return nil
 }

@@ -74,9 +74,24 @@ func (dev *DeviceSpec) Label() string {
 	)
 }
 
+func (dev *DeviceSpec) String() string {
+	return dev.Label()
+}
+
 type DeviceList []DeviceSpec
 
 type Mode int
+
+func (m Mode) String() string {
+	switch m {
+	case AllowList:
+		return "allow"
+	case DenyList:
+		return "deny"
+	default:
+		return "unknown"
+	}
+}
 
 const (
 	AllowList Mode = iota
