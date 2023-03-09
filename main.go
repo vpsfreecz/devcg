@@ -26,6 +26,8 @@ func main() {
 		err = runAttachProg(opts)
 	case detachProg:
 		err = runDetachProg(opts)
+	case replaceProg:
+		err = runReplaceProg(opts)
 	default:
 		err = fmt.Errorf("Unknown action %v", opts.action)
 	}
@@ -97,4 +99,30 @@ func runAttachProg(opts *options) error {
 
 func runDetachProg(opts *options) error {
 	return os.Remove(opts.linkPin)
+}
+
+func runReplaceProg(opts *options) error {
+	link, err := loadPinnedLink(opts.linkPin)
+
+	if err != nil {
+		return err
+	}
+
+	prog, err := loadPinnedProgram(opts.progPin)
+
+	if err != nil {
+		return err
+	}
+
+	if err := link.Update(prog); err != nil {
+		return err
+	}
+
+	if opts.newLinkPin != "" {
+		if err := os.Rename(opts.linkPin, opts.newLinkPin); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

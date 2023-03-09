@@ -44,6 +44,7 @@ Commands:
   del <prog pin>                                         Delete a program
   attach <prog pin> <cgroup path> <link pin>             Attach existing program to cgroup
   detach <link pin>                                      Detach program from cgroup
+  replace <link pin> <prog pin> [new link pin]           Replace program attached to a cgroup
 
 <prog pin> is an absolute path to a file inside the BPF filesystem, usually located in /sys/fs/bpf.
 As long as the pin file exists, the program is held in the kernel.

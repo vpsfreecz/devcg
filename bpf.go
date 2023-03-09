@@ -349,3 +349,7 @@ func attachProgram(prog *ebpf.Program, progPin string, cgroupPath string, linkPi
 
 	return nil
 }
+
+func loadPinnedLink(linkPin string) (link.Link, error) {
+	return link.LoadPinnedLink(linkPin, nil)
+}

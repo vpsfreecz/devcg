@@ -11,11 +11,12 @@ import (
 type action int
 
 const (
-	newProg    action = iota
-	delProg    action = iota
-	attachProg action = iota
-	detachProg action = iota
-	setProg    action = iota
+	newProg     action = iota
+	delProg     action = iota
+	attachProg  action = iota
+	detachProg  action = iota
+	replaceProg action = iota
+	setProg     action = iota
 )
 
 type options struct {
@@ -25,6 +26,7 @@ type options struct {
 	progName   string
 	progPin    string
 	linkPin    string
+	newLinkPin string
 	mode       Mode
 	devices    DeviceList
 }
@@ -40,6 +42,7 @@ Commands:
   del <prog pin>                                         Delete a program
   attach <prog pin> <cgroup path> <link pin>             Attach existing program to cgroup
   detach <link pin>                                      Detach program from cgroup
+  replace <link pin> <prog pin> [new link pin]           Replace program attached to a cgroup
 
 <prog pin> is an absolute path to a file inside the BPF filesystem, usually located in /sys/fs/bpf.
 As long as the pin file exists, the program is held in the kernel.
@@ -129,6 +132,9 @@ func parseOptions() *options {
 	} else if cmd == "detach" {
 		err = parseDetach(opts, args[1:])
 
+	} else if cmd == "replace" {
+		err = parseReplace(opts, args[1:])
+
 	} else {
 		err = fmt.Errorf("Unknown command %v", cmd)
 	}
@@ -213,6 +219,22 @@ func parseDetach(opts *options, args []string) error {
 
 	opts.action = detachProg
 	opts.linkPin = args[0]
+
+	return nil
+}
+
+func parseReplace(opts *options, args []string) error {
+	if len(args) < 2 || len(args) > 3 {
+		return fmt.Errorf("Invalid arguments")
+	}
+
+	opts.action = replaceProg
+	opts.linkPin = args[0]
+	opts.progPin = args[1]
+
+	if len(args) > 2 {
+		opts.newLinkPin = args[2]
+	}
 
 	return nil
 }
