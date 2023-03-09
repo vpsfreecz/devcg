@@ -39,46 +39,68 @@ Usage: devcgprog [options] <command> <arguments...>
 Build and attach BPF programs to cgroupv2 devices controller.
 
 Commands:
-  set <prog pin> <cgroup path> allow|deny <device...>    Create a program and attach it to a cgroup
-  new <prog pin> allow|deny <device...>                  Create a program
-  del <prog pin>                                         Delete a program
-  attach <prog pin> <cgroup path> <link pin>             Attach existing program to cgroup
-  detach <link pin>                                      Detach program from cgroup
-  replace <link pin> <prog pin> [new link pin]           Replace program attached to a cgroup
+  set <prog pin> <cgroup path> <link pin> allow|deny <device...>
+    Create a program and attach it to a cgroup
 
-<prog pin> is an absolute path to a file inside the BPF filesystem, usually located in /sys/fs/bpf.
-As long as the pin file exists, the program is held in the kernel.
+  new <prog pin> allow|deny <device...>
+    Create a program
 
-<link pin> is a file within the BPF filesystem representing BPF program attached to a cgroup.
-When the link pin file is removed, the program is detached.
+  del <prog pin>
+    Delete a program
 
-<cgroup path> is an absolute path to cgroup in a unified hierarchy, usually found in
-/sys/fs/cgroup.
+  attach <prog pin> <cgroup path> <link pin>
+    Attach existing program to cgroup
 
-allow | deny determines whether the program will allow access only to the listed devices,
-or if it will deny access to the listed devices and allow all others.
+  detach <link pin>
+    Detach program from cgroup
+
+  replace <link pin> <prog pin> [new link pin]
+    Replace program attached to a cgroup
+
+<prog pin> is an absolute path to a file inside the BPF filesystem, usually
+located in /sys/fs/bpf. As long as the pin file exists, the program is held
+in the kernel.
+
+<link pin> is a file within the BPF filesystem representing BPF program attached
+to a cgroup. When the link pin file is removed, the program is detached.
+
+<cgroup path> is an absolute path to cgroup in a unified hierarchy, usually
+found in /sys/fs/cgroup.
+
+allow | deny determines whether the program will allow access only to the listed
+devices, or if it will deny access to the listed devices and allow all others.
 
 <device...> specify individual devices in the following format:
 
   basic | standard | <type>:<major>:<minor>:<access mask>
 
-<type> is c for char and b for block devices. <major> and <minor> are devices numbers, * can be
-used to match all major/minor numbers. <access mask> consists of r for read, w for write
-and m for mknod access.
+<type> is c for char and b for block devices. <major> and <minor> are devices
+numbers, * can be used to match all major/minor numbers. <access mask> consists
+of r for read, w for write and m for mknod access.
 
-<device> basic is a shortcut to allow/deny access to /dev/null, /dev/zero, /dev/full, /dev/random
-and /dev/urandom, as if they were enumerated on the command line.
+<device> basic is a shortcut to allow/deny access to /dev/null, /dev/zero,
+/dev/full, /dev/random and /dev/urandom, as if they were enumerated on
+the command line.
 
-<device> standard will allow/deny access to the basic devices, plus /dev/kmsg, /dev/tty,
-/dev/console, /dev/ptmx, /dev/tty* and mknod for all devices.
+<device> standard will allow/deny access to the basic devices, plus /dev/kmsg,
+/dev/tty, /dev/console, /dev/ptmx, /dev/tty* and mknod for all devices.
 
-Example use:
+Example uses:
 
+  # Create a cgroup
   mkdir /sys/fs/cgroup/my-cgroup
 
-  devcgprog set /sys/fs/bpf/my-program /sys/fs/cgroup/my-cgroup allow basic
+  # Allow only access to basic devices
+  devcgprog set /sys/fs/bpf/my-program \
+         /sys/fs/cgroup/my-cgroup \
+	 /sys/fs/bpf/my-program-on-my-cgroup \
+	 allow basic
 
-  devcgprog set /sys/fs/bpf/my-program /sys/fs/cgroup/my-cgroup allow c:1:3:rwm
+  # Allow only access to the selected device
+  devcgprog set /sys/fs/bpf/my-program \
+         /sys/fs/cgroup/my-cgroup \
+	 /sys/fs/bpf/my-program-on-my-cgroup \
+	 allow c:1:3:rwm
 
 Options:
 
