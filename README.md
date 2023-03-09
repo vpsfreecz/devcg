@@ -13,18 +13,21 @@ libraries or kernel sources are needed to use it.
 Allow access only to selected devices, e.g. only to `/dev/null`:
 
 ```bash
-# devcgprog set /sys/fs/bpf/my-program /sys/fs/cgroup/my-cgroup allow c:1:3:rwm
+# devcgprog set /sys/fs/bpf/my-program \
+                /sys/fs/cgroup/my-cgroup \
+		/sys/fs/bpf/my-program-on-my-cgroup \
+		allow c:1:3:rwm
 ```
 
 The above command will generate a program, load it to the kernel and pin it
 to `/sys/fs/bpf/my-program`. The pin is used to hold the program within the kernel.
 The program is then attached to cgroup at `/sys/fs/cgroup/my-cgroup`. The link is
-once again pinned in the BPF filesystem.
+once again pinned in the BPF filesystem at `/sys/fs/bpf/my-program-on-my-cgroup`.
 
 The program can then be detached as:
 
 ```bash
-# devcgprog detach /sys/fs/bpf/my-program /dev/fs/cgroup/my-cgroup
+# devcgprog detach /sys/fs/bpf/my-program-on-my-cgroup
 ```
 
 One program can be attached to multiple cgroups.
@@ -36,13 +39,17 @@ Usage: devcgprog [options] <command> <arguments...>
 Build and attach BPF programs to cgroupv2 devices controller.
 
 Commands:
-  set <pin file> <cgroup path> allow|deny <device...>    Create a program and attach it to a cgroup
-  new <pin file> allow|deny <device...>                  Create a program
-  del <pin file>                                         Delete a program
-  attach <pin file> <cgroup path>                        Attach existing program to cgroup
-  detach <pin file> <cgroup path>                        Detach program from cgroup
+  set <prog pin> <cgroup path> allow|deny <device...>    Create a program and attach it to a cgroup
+  new <prog pin> allow|deny <device...>                  Create a program
+  del <prog pin>                                         Delete a program
+  attach <prog pin> <cgroup path> <link pin>             Attach existing program to cgroup
+  detach <link pin>                                      Detach program from cgroup
 
-<pin file> is an absolute path to a file inside bpf filesystem, usually located in /sys/fs/bpf.
+<prog pin> is an absolute path to a file inside the BPF filesystem, usually located in /sys/fs/bpf.
+As long as the pin file exists, the program is held in the kernel.
+
+<link pin> is a file within the BPF filesystem representing BPF program attached to a cgroup.
+When the link pin file is removed, the program is detached.
 
 <cgroup path> is an absolute path to cgroup in a unified hierarchy, usually found in
 /sys/fs/cgroup.
@@ -76,8 +83,6 @@ Options:
 
   -debug
     	Print program instructions
-  -linkpin string
-    	Path to attach link pin file
   -name string
     	Set BPF program name (default "devcgprog")
 ```

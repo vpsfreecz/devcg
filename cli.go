@@ -35,13 +35,17 @@ Usage: %s [options] <command> <arguments...>
 Build and attach BPF programs to cgroupv2 devices controller.
 
 Commands:
-  set <pin file> <cgroup path> allow|deny <device...>    Create a program and attach it to a cgroup
-  new <pin file> allow|deny <device...>                  Create a program
-  del <pin file>                                         Delete a program
-  attach <pin file> <cgroup path>                        Attach existing program to cgroup
-  detach <pin file> <cgroup path>                        Detach program from cgroup
+  set <prog pin> <cgroup path> <link pin> allow|deny <device...>    Create a program and attach it to a cgroup
+  new <prog pin> allow|deny <device...>                  Create a program
+  del <prog pin>                                         Delete a program
+  attach <prog pin> <cgroup path> <link pin>             Attach existing program to cgroup
+  detach <link pin>                                      Detach program from cgroup
 
-<pin file> is an absolute path to a file inside bpf filesystem, usually located in /sys/fs/bpf.
+<prog pin> is an absolute path to a file inside the BPF filesystem, usually located in /sys/fs/bpf.
+As long as the pin file exists, the program is held in the kernel.
+
+<link pin> is a file within the BPF filesystem representing BPF program attached to a cgroup.
+When the link pin file is removed, the program is detached.
 
 <cgroup path> is an absolute path to cgroup in a unified hierarchy, usually found in
 /sys/fs/cgroup.
@@ -67,9 +71,9 @@ Example use:
 
   mkdir /sys/fs/cgroup/my-cgroup
   
-  %s set /sys/fs/bpf/my-program /sys/fs/cgroup/my-cgroup allow basic
+  %s set /sys/fs/bpf/my-program /sys/fs/cgroup/my-cgroup /sys/fs/bpf/my-program-on-my-cgroup allow basic
 
-  %s set /sys/fs/bpf/my-program /sys/fs/cgroup/my-cgroup allow c:1:3:rwm
+  %s set /sys/fs/bpf/my-program /sys/fs/cgroup/my-cgroup /sys/fs/bpf/my-program-on-my-cgroup allow c:1:3:rwm
 
 Options:
 
@@ -95,13 +99,6 @@ func parseOptions() *options {
 		"name",
 		"devcgprog",
 		"Set BPF program name",
-	)
-
-	flag.StringVar(
-		&opts.linkPin,
-		"linkpin",
-		"",
-		"Path to attach link pin file",
 	)
 
 	flag.Parse()
@@ -142,27 +139,24 @@ func parseOptions() *options {
 		return nil
 	}
 
-	if opts.linkPin == "" && opts.progPin != "" && opts.cgroupPath != "" {
-		opts.linkPin = fmt.Sprintf("%s-link-%s", opts.progPin, strings.ReplaceAll(opts.cgroupPath, "/", "-"))
-	}
-
 	return opts
 }
 
 func parseSet(opts *options, args []string) error {
-	if len(args) < 4 {
+	if len(args) < 5 {
 		return fmt.Errorf("Error: too few arguments")
 	}
 
 	opts.action = setProg
 	opts.progPin = args[0]
 	opts.cgroupPath = args[1]
+	opts.linkPin = args[2]
 
-	if err := parseProgramMode(opts, args[2]); err != nil {
+	if err := parseProgramMode(opts, args[3]); err != nil {
 		return err
 	}
 
-	if err := parseDevices(opts, args[3:]); err != nil {
+	if err := parseDevices(opts, args[4:]); err != nil {
 		return err
 	}
 
@@ -200,25 +194,25 @@ func parseDel(opts *options, args []string) error {
 }
 
 func parseAttach(opts *options, args []string) error {
-	if len(args) != 2 {
+	if len(args) != 3 {
 		return fmt.Errorf("Invalid arguments")
 	}
 
 	opts.action = attachProg
 	opts.progPin = args[0]
 	opts.cgroupPath = args[1]
+	opts.linkPin = args[2]
 
 	return nil
 }
 
 func parseDetach(opts *options, args []string) error {
-	if len(args) != 2 {
+	if len(args) != 1 {
 		return fmt.Errorf("Invalid arguments")
 	}
 
 	opts.action = detachProg
-	opts.progPin = args[0]
-	opts.cgroupPath = args[1]
+	opts.linkPin = args[0]
 
 	return nil
 }
