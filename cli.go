@@ -153,7 +153,7 @@ func parseOptions() *options {
 	if len(args) < 1 {
 		fmt.Fprintf(os.Stderr, "Error: too few arguments\n")
 		flag.Usage()
-		return nil
+		os.Exit(1)
 	}
 
 	cmd := args[0]
@@ -184,7 +184,7 @@ func parseOptions() *options {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		flag.Usage()
-		return nil
+		os.Exit(1)
 	}
 
 	return opts
